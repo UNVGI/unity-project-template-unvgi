@@ -10,7 +10,7 @@
 #   3. update-manifest.sh による manifest.json のその場更新
 #      (公式パッケージのみ適合版へ。サードパーティ・scopedRegistries は温存)
 #
-# 呼び出し元: template-init.yml / update-project.yml
+# 呼び出し元: update-project.yml
 # プロジェクトの存在チェックは呼び出し側で行うこと。
 # =============================================================================
 set -euo pipefail

@@ -63,13 +63,12 @@ Unity Editor は運用安定化のため標準バージョン (ステークホ�
 
 ### 3.2 template-init.yml (生成先で 1 回だけ)
 
-テンプレートから新規リポジトリを生成すると、その最初の push をトリガーに実行されます。処理内容は次の 3 つです。
+テンプレートから新規リポジトリを生成すると、その最初の push をトリガーに実行されます。処理内容は次の 2 つです。
 
 1. **同梱プロジェクトのリネーム** — `rename-project.sh` で `TemplateProject/` をリポジトリ名へ `git mv` し、ProjectSettings の productName もリポジトリ名に書き換えます。名前を変えたい場合は、初期化後に Update Project を実行するか `env: PROJECT_DIR` を書き換えます。
-2. **標準バージョンへの切り替え (差分がある時だけ)** — `env: UNITY_VERSION` が同梱プロジェクトの ProjectVersion.txt と異なる場合のみ、`set-unity-version.sh` で ProjectVersion.txt を書き換え、manifest.json の公式パッケージを適合版へその場更新します。**同じバージョンなら何も変換されず、手動キュレーション済みの manifest.json がそのまま使われます。**
-3. **自己削除とコミット** — `template-init.yml` と `unity-versions-update.yml` を削除し、テンプレート専用の README を生成先用 (`.github/PROJECT_README.md`) に差し替えたうえで、全変更を `chore: initialize from template` としてコミット・push します。`update-project.yml` / `add-another-project.yml` / scripts は以後も使うため残します。
+2. **自己削除とコミット** — `template-init.yml` と `unity-versions-update.yml` を削除し、テンプレート専用の README を生成先用 (`.github/PROJECT_README.md`) に差し替えたうえで、全変更を `chore: initialize from template` としてコミット・push します。`update-project.yml` / `add-another-project.yml` / scripts は以後も使うため残します。
 
-採用された Unity バージョンとプロジェクトディレクトリは Actions の実行サマリーに表示されます。
+Unity バージョンとパッケージ構成は**同梱 TemplateProject のものがそのまま使われ、初期化時には変換されません**。fork したテンプレートで TemplateProject を好みのバージョン・パッケージ構成にしておけば、それがそのまま生成先の初期状態になります。採用された Unity バージョンとプロジェクトディレクトリは Actions の実行サマリーに表示されます。
 
 デバッグ時は `workflow_dispatch` (手動実行) を使うと自己削除がスキップされるため、テスト用リポジトリ 1 つで修正→再実行のループを回せます。
 
@@ -105,7 +104,7 @@ AI エージェントからの Unity 操作 (Editor の起動・ライブ操作�
 | スクリプト | 役割 | 呼び出し元 |
 |---|---|---|
 | `resolve-changeset.sh <バージョン>` | changeset を TSV → 公式 API の順で解決し stdout へ出力 | setup-project.sh / set-unity-version.sh |
-| `set-unity-version.sh <ディレクトリ> <バージョン>` | 既存プロジェクトの ProjectVersion.txt 書き換え + manifest その場更新 | template-init.yml / update-project.yml |
+| `set-unity-version.sh <ディレクトリ> <バージョン>` | 既存プロジェクトの ProjectVersion.txt 書き換え + manifest その場更新 | update-project.yml |
 | `update-manifest.sh <バージョン> <ディレクトリ>` | 既存 manifest.json の公式パッケージのみを Editor 適合版へ書き換え (再生成しない) | set-unity-version.sh |
 | `rename-project.sh <現ディレクトリ> <新名>` | ディレクトリ名 (git mv) + productName の一括リネーム (同名なら productName のみ) | template-init.yml / update-project.yml |
 | `setup-project.sh <ディレクトリ> <バージョン>` | 新規プロジェクトの骨組み構成 (Assets/Packages/ProjectSettings) | add-another-project.yml |
@@ -153,7 +152,7 @@ AI エージェントからの Unity 操作 (Editor の起動・ライブ操作�
 ### 4.4 テンプレート自体のメンテナンス
 
 - **同梱プロジェクトの更新**: `TemplateProject/` を Unity で直接開いて編集し、コミットします (パッケージ構成・ProjectSettings・共通アセットなど)。ここが生成先の初期状態になります。
-- **標準バージョンの変更**: `TemplateProject/` を対象バージョンの Unity で開き直してコミットするのが基本です。`template-init.yml` 冒頭の `env: UNITY_VERSION` を書き換えると、初期化時にバージョン切替 + パッケージ適合更新を自動で行うこともできます (同梱バージョンと同じ場合は何も変換されません)。
+- **標準バージョンの変更**: `TemplateProject/` を対象バージョンの Unity で開き直してコミットします。ワークフロー側にバージョン設定は無いため、`TemplateProject/ProjectSettings/ProjectVersion.txt` が唯一の基準です。
 - **プロジェクト追加時の骨組みパッケージ構成の変更**: `resolve-upm.sh` の `PACKAGES` 変数を編集します。
 - **Unity CLI skill の更新**: Unity CLI を最新化 (`unity upgrade`) してから、リポジトリ直下で `unity skill install claude-code --local --yes` を実行し、生成された `.claude/skills/unity-cli/` を `.agents/skills/unity-cli/` にもコピーしてコミットします。
 - **`com.unity.pipeline` の更新**: `unity pipeline upgrade --project-path TemplateProject` を実行し、Unity で開いて packages-lock.json を更新してからコミットします。
